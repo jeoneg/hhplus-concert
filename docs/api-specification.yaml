@@ -8,7 +8,7 @@ tags:
   - name: Concert Reservation
     description: 콘서트 예약
 paths:
-  /queue/tokens:
+  /api/queue/tokens:
     post:
       tags:
         - Concert Reservation
@@ -21,9 +21,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QueueToken'
+                example:
+                  id: ae1f6c56-64d4-421e-8a40-08385a33286d
+                  status: INACTIVE
+                  example: "2025-01-01T11:45:13"
 
-  /queue/tokens/{tokenId}:
     get:
       tags:
         - Concert Reservation
@@ -31,9 +33,9 @@ paths:
       description: 서비스에 접근할 수 있는 대기열 토큰을 조회합니다.
       operationId: getQueueToken
       parameters:
-        - name: tokenId
-          in: path
-          description: 조회할 토큰의 ID
+        - name: Queue-Token
+          in: header
+          description: 대기열 토큰
           required: true
           schema:
             type: string
@@ -43,13 +45,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QueueToken'
                 example:
                   id: ae1f6c56-64d4-421e-8a40-08385a33286d
                   status: ACTIVE
-                  example: "2025-01-01T18:00:00"
+                  example: "2025-01-01T11:47:15"
 
-  /concerts/{concertId}/schedules:
+  /api/concerts/{concertId}/schedules:
     get:
       tags:
         - Concert Reservation
@@ -57,6 +58,12 @@ paths:
       description: 특정 콘서트의 모든 스케줄을 조회합니다.
       operationId: getSchedules
       parameters:
+        - name: Queue-Token
+          in: header
+          description: 대기열 토큰
+          required: true
+          schema:
+            type: string
         - name: concertId
           in: path
           description: 조회할 콘서트의 ID
@@ -76,7 +83,7 @@ paths:
         '404':
           description: Not Found, 요청 resource 가 존재하지 않는 경우
 
-  /concerts/{concertId}/schedules/{scheduleId}/seats:
+  /api/concerts/{concertId}/schedules/{scheduleId}/seats:
     get:
       tags:
         - Concert Reservation
@@ -84,6 +91,12 @@ paths:
       description: 특정 콘서트의 특정 스케줄에 대한 모든 좌석을 조회합니다.
       operationId: getSeats
       parameters:
+        - name: Queue-Token
+          in: header
+          description: 대기열 토큰
+          required: true
+          schema:
+            type: string
         - name: concertId
           in: path
           description: 조회할 콘서트의 ID
@@ -110,13 +123,20 @@ paths:
         '404':
           description: Not Found, 요청 resource 가 존재하지 않는 경우
 
-  /reservations:
+  /api/reservations:
     post:
       tags:
         - Concert Reservation
       summary: 콘서트 예약
       description: 콘서트 좌석을 예약합니다.
       operationId: reservations
+      parameters:
+        - name: Queue-Token
+          in: header
+          description: 대기열 토큰
+          required: true
+          schema:
+            type: string
       requestBody:
         description: 콘서트 예약 정보
         content:
@@ -136,13 +156,20 @@ paths:
         '404':
           description: Not Found, 요청 resource 가 존재하지 않는 경우
 
-  /payments/points/charge:
+  /api/payments/points/charge:
     post:
       tags:
         - Concert Reservation
       summary: 포인트 충전
       description: 사용자의 포인트를 충전합니다.
       operationId: chargePoints
+      parameters:
+        - name: Queue-Token
+          in: header
+          description: 대기열 토큰
+          required: true
+          schema:
+            type: string
       requestBody:
         description: 충전할 포인트 정보
         content:
@@ -159,13 +186,13 @@ paths:
                 $ref: '#/components/schemas/Points'
               example:
                 userId: 5
-                points: 200000
+                balance: 200000
         '400':
           description: Bad Request, 요청을 처리할 수 없는 경우
         '404':
           description: Not Found, 요청 resource 가 존재하지 않는 경우
 
-  /payments/points/balance:
+  /api/payments/points/balance:
     get:
       tags:
         - Concert Reservation
@@ -173,10 +200,16 @@ paths:
       description: 특정 사용자의 포인트 잔액을 조회합니다.
       operationId: getPoints
       parameters:
+        - name: Queue-Token
+          in: header
+          description: 대기열 토큰
+          required: true
+          schema:
+            type: string
         - name: userId
           in: query
           description: 조회할 사용자의 ID
-          allowReserved: true
+          required: true
           schema:
             type: integer
             format: int64
@@ -189,25 +222,36 @@ paths:
                 $ref: '#/components/schemas/Points'
               example:
                 userId: 5
-                points: 200000
+                balance: 200000
         '400':
           description: Bad Request, 요청을 처리할 수 없는 경우
         '404':
           description: Not Found, 요청 resource 가 존재하지 않는 경우
 
-  /payments/points:
+  /api/payments/points:
     post:
       tags:
         - Concert Reservation
       summary: 포인트로 결제
       description: 포인트를 사용하여 결제를 진행합니다.
       operationId: payments
+      parameters:
+        - name: Queue-Token
+          in: header
+          description: 대기열 토큰
+          required: true
+          schema:
+            type: string
       requestBody:
         description: 결제 정보
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Points'
+            example:
+              userId: 5
+              scheduleId: 10
+              seatId: 3
         required: true
       responses:
         '200':
@@ -217,10 +261,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Points'
               example:
+                reservationId: 2
                 userId: 5
-                paymentId: 54
-                paymentAmount: 200000
-                paidAt: "2025-01-01T18:00:00"
         '400':
           description: Bad Request, 요청을 처리할 수 없는 경우
         '404':
@@ -298,15 +340,12 @@ components:
             $ref: '#/components/schemas/ConcertSeat'
           example:
             - seatId: 1
-              seatNumber: 21
               status: AVAILABLE
               price: 130000
             - seatId: 2
-              seatNumber: 22
               status: UNAVAILABLE
               price: 130000
             - seatId: 3
-              seatNumber: 23
               status: TEMP_RESERVED
               price: 130000
 
@@ -355,7 +394,7 @@ components:
           type: integer
           format: int64
           example: 5
-        points:
+        amount:
           type: integer
           format: int64
           example: 150000
