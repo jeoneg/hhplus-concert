@@ -1,0 +1,361 @@
+openapi: 3.0.3
+info:
+  title: Concert Reservation - OpenAPI 3.0
+  version: 0.0.1
+servers:
+  - url: http://localhost:8080/api
+tags:
+  - name: Concert Reservation
+    description: 콘서트 예약
+paths:
+  /queue/tokens:
+    post:
+      tags:
+        - Concert Reservation
+      summary: 대기열 토큰 발급
+      description: 서비스에 접근할 수 있는 대기열 토큰을 발급합니다.
+      operationId: issuedQueueToken
+      responses:
+        '200':
+          description: 요청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueToken'
+
+  /queue/tokens/{tokenId}:
+    get:
+      tags:
+        - Concert Reservation
+      summary: 대기열 토큰 조회
+      description: 서비스에 접근할 수 있는 대기열 토큰을 조회합니다.
+      operationId: getQueueToken
+      parameters:
+        - name: tokenId
+          in: path
+          description: 조회할 토큰의 ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 요청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueToken'
+                example:
+                  id: ae1f6c56-64d4-421e-8a40-08385a33286d
+                  status: ACTIVE
+                  example: "2025-01-01T18:00:00"
+
+  /concerts/{concertId}/schedules:
+    get:
+      tags:
+        - Concert Reservation
+      summary: 콘서트 스케줄 조회
+      description: 특정 콘서트의 모든 스케줄을 조회합니다.
+      operationId: getSchedules
+      parameters:
+        - name: concertId
+          in: path
+          description: 조회할 콘서트의 ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 요청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConcertSchedules'
+        '400':
+          description: Bad Request, 요청을 처리할 수 없는 경우
+        '404':
+          description: Not Found, 요청 resource 가 존재하지 않는 경우
+
+  /concerts/{concertId}/schedules/{scheduleId}/seats:
+    get:
+      tags:
+        - Concert Reservation
+      summary: 콘서트 좌석 조회
+      description: 특정 콘서트의 특정 스케줄에 대한 모든 좌석을 조회합니다.
+      operationId: getSeats
+      parameters:
+        - name: concertId
+          in: path
+          description: 조회할 콘서트의 ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: scheduleId
+          in: path
+          description: 조회할 콘서트 스케줄의 ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 요청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConcertSeats'
+        '400':
+          description: Bad Request, 요청을 처리할 수 없는 경우
+        '404':
+          description: Not Found, 요청 resource 가 존재하지 않는 경우
+
+  /reservations:
+    post:
+      tags:
+        - Concert Reservation
+      summary: 콘서트 예약
+      description: 콘서트 좌석을 예약합니다.
+      operationId: reservations
+      requestBody:
+        description: 콘서트 예약 정보
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reservation'
+        required: true
+      responses:
+        '200':
+          description: 요청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          description: Bad Request, 요청을 처리할 수 없는 경우
+        '404':
+          description: Not Found, 요청 resource 가 존재하지 않는 경우
+
+  /payments/points/charge:
+    post:
+      tags:
+        - Concert Reservation
+      summary: 포인트 충전
+      description: 사용자의 포인트를 충전합니다.
+      operationId: chargePoints
+      requestBody:
+        description: 충전할 포인트 정보
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Points'
+        required: true
+      responses:
+        '200':
+          description: 요청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Points'
+              example:
+                userId: 5
+                points: 200000
+        '400':
+          description: Bad Request, 요청을 처리할 수 없는 경우
+        '404':
+          description: Not Found, 요청 resource 가 존재하지 않는 경우
+
+  /payments/points/balance:
+    get:
+      tags:
+        - Concert Reservation
+      summary: 포인트 잔액 조회
+      description: 특정 사용자의 포인트 잔액을 조회합니다.
+      operationId: getPoints
+      parameters:
+        - name: userId
+          in: query
+          description: 조회할 사용자의 ID
+          allowReserved: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 요청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Points'
+              example:
+                userId: 5
+                points: 200000
+        '400':
+          description: Bad Request, 요청을 처리할 수 없는 경우
+        '404':
+          description: Not Found, 요청 resource 가 존재하지 않는 경우
+
+  /payments/points:
+    post:
+      tags:
+        - Concert Reservation
+      summary: 포인트로 결제
+      description: 포인트를 사용하여 결제를 진행합니다.
+      operationId: payments
+      requestBody:
+        description: 결제 정보
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Points'
+        required: true
+      responses:
+        '200':
+          description: 요청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Points'
+              example:
+                userId: 5
+                paymentId: 54
+                paymentAmount: 200000
+                paidAt: "2025-01-01T18:00:00"
+        '400':
+          description: Bad Request, 요청을 처리할 수 없는 경우
+        '404':
+          description: Not Found, 요청 resource 가 존재하지 않는 경우
+
+components:
+  schemas:
+    QueueToken:
+      type: object
+      properties:
+        id:
+          type: string
+          example: ae1f6c56-64d4-421e-8a40-08385a33286d
+        status:
+          type: string
+          example: INACTIVE
+        issuedAt:
+          type: string
+          format: date-time
+          example: "2025-01-01T18:00:00"
+
+    Concert:
+      type: object
+      properties:
+        concertId:
+          type: integer
+          format: int64
+          example: 10
+
+    ConcertSchedules:
+      type: object
+      properties:
+        concertId:
+          type: integer
+          format: int64
+          example: 10
+        schedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConcertSchedule'
+          example:
+            - scheduleId: 1
+              scheduledAt: "2025-01-03T17:00:00"
+            - scheduleId: 2
+              scheduledAt: "2025-01-04T18:00:00"
+            - scheduleId: 3
+              scheduledAt: "2025-01-05T19:00:00"
+
+    ConcertSchedule:
+      type: object
+      properties:
+        scheduleId:
+          type: integer
+          format: int64
+          example: 1
+        scheduledAt:
+          type: string
+          format: date-time
+          example: "2025-01-01T18:00:00"
+
+    ConcertSeats:
+      type: object
+      properties:
+        concertId:
+          type: integer
+          format: int64
+          example: 5
+        scheduleId:
+          type: integer
+          format: int64
+          example: 1
+        seats:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConcertSeat'
+          example:
+            - seatId: 1
+              seatNumber: 21
+              status: AVAILABLE
+              price: 130000
+            - seatId: 2
+              seatNumber: 22
+              status: UNAVAILABLE
+              price: 130000
+            - seatId: 3
+              seatNumber: 23
+              status: TEMP_RESERVED
+              price: 130000
+
+    ConcertSeat:
+      type: object
+      properties:
+        seatId:
+          type: integer
+          format: int64
+          example: 1
+        seatNumber:
+          type: integer
+          format: int64
+          example: 21
+        grade:
+          type: string
+          example: VIP
+        status:
+          type: string
+          example: AVAILABLE
+
+    Reservation:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 5
+        concertId:
+          type: integer
+          format: int64
+          example: 10
+        scheduleId:
+          type: integer
+          format: int64
+          example: 1
+        seatId:
+          type: integer
+          format: int64
+          example: 2
+
+    Points:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 5
+        points:
+          type: integer
+          format: int64
+          example: 150000
